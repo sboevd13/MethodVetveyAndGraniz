@@ -5,12 +5,21 @@ import java.util.PriorityQueue
 fun main() {
 
     val m = Int.MAX_VALUE
+    /*
     val matrix = arrayOf(
         intArrayOf(m, 20, 18, 12, 8),
         intArrayOf(5, m, 14, 7, 11),
         intArrayOf(12, 18, m, 6, 11),
         intArrayOf(11, 17, 11, m, 12),
         intArrayOf(5, 5, 5, 5, m)
+    )
+     */
+    val matrix = arrayOf(
+        intArrayOf(m, 90, 80, 40, 100),
+        intArrayOf(60, m, 40, 50, 70),
+        intArrayOf(50, 30, m, 60, 20),
+        intArrayOf(10, 70, 20, m, 50),
+        intArrayOf(20, 40, 50, 20, m)
     )
     println(mvg(matrix))
 
@@ -31,7 +40,9 @@ fun mvg(matrix: Array<IntArray>) : Int {
         h = reductionMatrixAndFindLocalLowBorder(root),
         isExcluded = false,
         rowExcleded = root.rowExcleded.copyOf().apply { this[rightDelEl[0]] = true },
-        columnExcleded = root.columnExcleded. copyOf().apply { this[rightDelEl[1]] = true })
+        columnExcleded = root.columnExcleded. copyOf().apply { this[rightDelEl[1]] = true },
+        pointArr = listOf(Pair(rightDelEl[0], rightDelEl[1]))
+    )
     priorityQueue.add(root.right)
     var curr: Node
     while (true) {
@@ -45,7 +56,8 @@ fun mvg(matrix: Array<IntArray>) : Int {
                 h = reductionMatrixH,
                 isExcluded = true,
                 rowExcleded = curr.rowExcleded,
-                columnExcleded = curr.columnExcleded
+                columnExcleded = curr.columnExcleded,
+                pointArr = curr.pointArr
             )
             priorityQueue.add(curr.left)
             curr.matrix[leftDelEl[1]][leftDelEl[0]] = Int.MAX_VALUE
@@ -54,13 +66,14 @@ fun mvg(matrix: Array<IntArray>) : Int {
                 h = reductionMatrixAndFindLocalLowBorder(curr),
                 isExcluded = false,
                 rowExcleded = curr.rowExcleded.copyOf().apply { this[leftDelEl[0]] = true },
-                columnExcleded = curr.columnExcleded.copyOf().apply { this[leftDelEl[1]] = true }
+                columnExcleded = curr.columnExcleded.copyOf().apply { this[leftDelEl[1]] = true },
+                pointArr = curr.pointArr + Pair(leftDelEl[0], leftDelEl[1])
             )
             if (isThisEnd(curr.right!!)) break
             priorityQueue.add(curr.right)
         }else {
             rightDelEl = findMaxShtraf(curr)
-            curr.left = Node(curr.matrix.copyAll(), curr.h + rightDelEl[2], true)
+            curr.left = Node(curr.matrix.copyAll(), curr.h + rightDelEl[2], true, pointArr = curr.pointArr)
             priorityQueue.add(curr.left)
             curr.matrix[rightDelEl[1]][rightDelEl[0]] = Int.MAX_VALUE
             curr.right = Node(
@@ -68,12 +81,14 @@ fun mvg(matrix: Array<IntArray>) : Int {
                 h = reductionMatrixAndFindLocalLowBorder(curr),
                 isExcluded = false,
                 rowExcleded = curr.rowExcleded.copyOf().apply { this[rightDelEl[0]] = true },
-                columnExcleded = curr.columnExcleded.copyOf().apply { this[rightDelEl[1]] = true }
+                columnExcleded = curr.columnExcleded.copyOf().apply { this[rightDelEl[1]] = true },
+                pointArr = curr.pointArr + Pair(rightDelEl[0], rightDelEl[1])
             )
             if (isThisEnd(curr.right!!)) break
             priorityQueue.add(curr.right)
         }
     }
+    curr.right!!.pointArr.forEach { println(it) }
 
     return curr.h
 }
@@ -160,6 +175,9 @@ fun isThisEnd (node: Node): Boolean {
     for (value in node.rowExcleded) {
         if (value == false) count++
     }
+    if (count == 1) {
+        node.pointArr += Pair(node.rowExcleded.indexOf(false), node.columnExcleded.indexOf(false))
+    }
     return count == 1
 }
 
@@ -171,7 +189,8 @@ data class Node  (
     var left: Node? = null,
     var right: Node? = null,
     var rowExcleded: BooleanArray = BooleanArray(matrix.size) {false},
-    var columnExcleded: BooleanArray = BooleanArray(matrix.size) {false}
+    var columnExcleded: BooleanArray = BooleanArray(matrix.size) {false},
+    var pointArr: List<Pair<Int, Int>> = emptyList()
 ) : Comparable<Node> {
     override fun compareTo(other: Node): Int {
         return compareValuesBy(this, other, Node::h)
